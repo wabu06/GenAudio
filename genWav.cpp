@@ -101,7 +101,7 @@ class Audio
 			
 			outs.write(buffer, offset + sizeof(int) * 3);
 			
-			if(!outs)
+			if(!outs.good())
 				throw std::string("File Write ERROR!!");
 			
 			delete[] buffer;
@@ -115,7 +115,7 @@ class Audio
 
 			ins.read(chunk_buf, sizeof(Chunks));
 			
-			if(!ins)
+			if(!ins.good())
 				throw std::string("File Read ERROR!!");
 			
 			int equal[4];
@@ -145,7 +145,7 @@ class Audio
 
 			ins.read(reinterpret_cast<char *>(data), wav.chunk.subChunk2_size);
 			
-			if(!ins)
+			if(!ins.good())
 				throw std::string("File Read ERROR!!");
 			
 			wav.samples = std::vector<float>(data, data + wav.chunk.subChunk2_size / sizeof(float));
@@ -153,23 +153,23 @@ class Audio
 			int params[3];
 			
 			ins.read(reinterpret_cast<char *>(params), sizeof(int) * 3);
-			
-			if(!ins)
+
+			if(ins.eof())
 			{
-				if(ins.eof())
-				{
-					wav.frequency = 250;
-					wav.amplitude = 1;
-					wav.duration = 5;
-				}
-				else
-					throw std::string("File Read ERROR!!");
+				wav.frequency = 250;
+				wav.amplitude = 1;
+				wav.duration = 5;
 			}
 			else
 			{
-				wav.frequency = params[0];
-				wav.amplitude = params[1];
-				wav.duration = params[2];
+				if(ins.good())
+				{
+					wav.frequency = params[0];
+					wav.amplitude = params[1];
+					wav.duration = params[2];
+				}
+				else
+					throw std::string("File Read ERROR!!");
 			}
 
 			delete[] chunk_buf;
