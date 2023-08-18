@@ -141,6 +141,8 @@ class Audio
 			
 			float data[wav.chunk.subChunk2_size / sizeof(float)];
 			
+			wav.samples = std::vector<float>(wav.chunk.subChunk2_size / sizeof(float));
+
 			ins.read(reinterpret_cast<char *>(data), wav.chunk.subChunk2_size);
 			
 			if(!ins)
@@ -153,10 +155,23 @@ class Audio
 			ins.read(reinterpret_cast<char *>(params), sizeof(int) * 3);
 			
 			if(!ins)
-				throw std::string("File Read ERROR!!");
-			
-			wav.frequency = params[0]; wav.amplitude = params[1]; wav.duration = params[2];
-			
+			{
+				if(ins.eof())
+				{
+					wav.frequency = 250;
+					wav.amplitude = 1;
+					wav.duration = 5;
+				}
+				else
+					throw std::string("File Read ERROR!!");
+			}
+			else
+			{
+				wav.frequency = params[0];
+				wav.amplitude = params[1];
+				wav.duration = params[2];
+			}
+
 			delete[] chunk_buf;
 
 			return ins;
