@@ -125,10 +125,10 @@ class Audio
 			if(!ins.good())
 				throw std::string("File Read ERROR!!");
 
-			std::pair<const char*, short> chunkIDs[] = { std::pair<const char*, short>(wav.chunk.chunkID, 0),
-														 std::pair<const char*, short>(wav.chunk.format, 8),
-														 std::pair<const char*, short>(wav.chunk.SubChunk1_ID, 12),
-														 std::pair<const char*, short>(wav.chunk.subChunk2_ID, 36) };
+			std::pair<char*, short> chunkIDs[] = {	std::pair<char*, short>(wav.chunk.chunkID, 0),
+													std::pair<char*, short>(wav.chunk.format, 8),
+													std::pair<char*, short>(wav.chunk.SubChunk1_ID, 12),
+													std::pair<char*, short>(wav.chunk.subChunk2_ID, 36) };
 			
 			for(auto& [id, o]: chunkIDs)
 			{
@@ -137,7 +137,20 @@ class Audio
 				if(equal != 0)
 					throw std::string("Invalid File Format!!");
 			}
+			
+			/*int equal[4];
+			
+			equal[0] = std::memcmp(chunk_buf, wav.chunk.chunkID, 4);
+			
+			equal[1] = std::memcmp(chunk_buf + 8, wav.chunk.format, 4);
+			
+			equal[2] = std::memcmp(chunk_buf + 12, wav.chunk.SubChunk1_ID, 4);
 
+			equal[3] = std::memcmp(chunk_buf + 36, wav.chunk.subChunk2_ID, 4);
+			
+			if( !(equal[0] && equal[1] && equal[2] && equal[3]) )
+				throw std::string("Invalid File Format!!");*/
+			
 			std::memcpy(reinterpret_cast<char *>(&wav.chunk.chunkSize), buffer + 4, 4);
 			
 			std::memcpy(reinterpret_cast<char *>(&wav.chunk.byteRate), buffer + 28, 4);
@@ -150,27 +163,52 @@ class Audio
 			
 			std::memcpy(reinterpret_cast<char *>(data), buffer + 44, wav.chunk.subChunk2_size);
 			
+			/*wav.samples = std::vector<float>(wav.chunk.subChunk2_size / sizeof(float));
+
+			ins.read(reinterpret_cast<char *>(data), wav.chunk.subChunk2_size);
+			
+			if(!ins.good())
+				throw std::string("File Read ERROR!!");*/
+			
 			wav.samples = std::vector<float>(data, data + wav.chunk.subChunk2_size / sizeof(float));
 			
-			int pds = end - (sizeof(Chunks) + wav.chunk.subChunk2_size); // parameter data size
+			//int params[3];
 			
-			if(pds == 12)
+			//ins.read(reinterpret_cast<char *>(params), sizeof(int) * 3);
+			
+			/*std::pair<int*, short> params[] = { std::pair<int*, short>(&wav.frequency, 0),
+												std::pair<int*, short>(&wav.amplitude, 4),
+												std::pair<int*, short>(&wav.duration, 8) };*/
+			
+			int* params[] = {&wav.frequency, &wav.amplitude, &wav.duration};
+			
+			//for(auto& [p, o]: params)
+			for(auto& p: params)
 			{
-				int* params[] = {&wav.frequency, &wav.amplitude, &wav.duration};
+				ins.read(reinterpret_cast<char *>(p), sizeof(int));
 				
-				int offset = wav.chunk.subChunk2_size;
-
-				for(auto& p: params) {
-					std::memcpy(reinterpret_cast<char *>(p), buffer + offset, sizeof(int));
-					offset += sizeof(int);
-				}
+				if(!ins.good())
+					throw std::string("File Read ERROR!!");
 			}
-			else
+			
+
+			/*if(ins.eof())
 			{
 				wav.frequency = 250;
 				wav.amplitude = 1;
 				wav.duration = 5;
 			}
+			else
+			{
+				if(ins.good())
+				{
+					wav.frequency = params[0];
+					wav.amplitude = params[1];
+					wav.duration = params[2];
+				}
+				else
+					throw std::string("File Read ERROR!!");
+			}*/
 
 			delete[] buffer;
 
