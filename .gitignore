@@ -4,3 +4,5 @@ genAudio
 *.o
 ts
 ts.cpp
+*wav
+

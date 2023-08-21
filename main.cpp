@@ -4,6 +4,9 @@
 *
 */
 
+
+#define MAIN
+
 #include "genAudio.h"
 
 

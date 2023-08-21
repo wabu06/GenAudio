@@ -16,20 +16,15 @@ Audio& Audio::generate()
 {
 	int numSamples = duration * chunk.sampleRate;
 
-	float maxAmp = (float) amplitude;
-
 	for(int s = 0; s < numSamples; s++)
 	{
-		float amp = s / numSamples * maxAmp + 1;
-		float chan1 = amp * sin(2 * M_PI * s * frequency);
-		//float chan2 = (maxAmp - amp) * cos(2 * M_PI * s * frequency);
-		float chan2 = amp * cos(2 * M_PI * s * frequency + amp);
+		float chan1 = amplitude1 * sin(2 * M_PI * s * frequency1 + phase1) + amplitude1 * cos(2 * M_PI * s * frequency1 + phase1);
 
-		samples.push_back(chan1); // c1 = cos(2 * pi * f * s + s)
-		samples.push_back(chan2); // c2 = sin(2 * pi * s + phase), c1 + c2
+		float chan2 = amplitude2 * cos(2 * M_PI * s * frequency2 + phase2) + amplitude2 * sin(2 * M_PI * s * frequency2 + phase2);;
+
+		samples.push_back(chan1);
+		samples.push_back(chan2);
 	}
-
-				// amp = s / (duruation * sampleRate) *  maxAmp
 
 	chunk.subChunk2_size = numSamples * chunk.numChannels * chunk.bitsPerSample / 8; // data size
 
@@ -43,7 +38,7 @@ std::ofstream& operator<<(std::ofstream& outs, const Audio& wav)
 	if(wav.samples.size() == 0)
 		throw std::string("No Audio Data!!");
 			
-	char* buffer = new char[sizeof(Chunks) + wav.samples.size() * sizeof(float) + sizeof(int) * 3];
+	char* buffer = new char[sizeof(Chunks) + wav.samples.size() * sizeof(float) + sizeof(int) * 7];
 			
 	std::memcpy(buffer, reinterpret_cast<const char *>(&wav.chunk), sizeof(Chunks));
 			
@@ -51,10 +46,10 @@ std::ofstream& operator<<(std::ofstream& outs, const Audio& wav)
 	std::memcpy(buffer + offset, reinterpret_cast<const char *>(wav.samples.data()), wav.samples.size() * sizeof(float));
 			
 	offset += wav.samples.size() * sizeof(float);
-	int params[] = {wav.frequency, wav.amplitude, wav.duration};
-	std::memcpy(buffer + offset, reinterpret_cast<const char *>(params), sizeof(int) * 3);
+	int params[] = {wav.frequency1, wav.amplitude1, wav.phase1, wav.frequency2, wav.amplitude2, wav.phase2, wav.duration};
+	std::memcpy(buffer + offset, reinterpret_cast<const char *>(params), sizeof(int) * 7);
 			
-	outs.write(buffer, offset + sizeof(int) * 3);
+	outs.write(buffer, offset + sizeof(int) * 7);
 			
 	if(!outs.good())
 		throw std::string("File Write ERROR!!");
@@ -109,9 +104,9 @@ std::ifstream& operator>>(std::ifstream& ins, Audio& wav)
 			
 	int pds = end - (sizeof(Chunks) + wav.chunk.subChunk2_size); // parameter data size
 			
-	if(pds == 12)
+	if(pds == sizeof(int) * 7)
 	{
-		int* params[] = {&wav.frequency, &wav.amplitude, &wav.duration};
+		int* params[] = {&wav.frequency1, &wav.amplitude1, &wav.phase1, &wav.frequency2, &wav.amplitude2, &wav.phase2, &wav.duration};
 				
 		int offset = wav.chunk.subChunk2_size;
 
@@ -121,11 +116,7 @@ std::ifstream& operator>>(std::ifstream& ins, Audio& wav)
 		}
 	}
 	else
-	{
-				wav.frequency = 250;
-				wav.amplitude = 1;
-				wav.duration = 5;
-	}
+		throw std::string("No Parameter Data!!");
 
 	delete[] buffer;
 

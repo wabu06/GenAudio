@@ -40,18 +40,48 @@ class Audio
 	
 	const short bps = sizeof(float) * 8;
 
-	int frequency, amplitude, duration; // max amp = 32760
+	int frequency1, amplitude1, phase1, frequency2, amplitude2, phase2;
+	int duration; // max amp = 32760
 
 	std::vector<float> samples;
 
 	public:
-		Audio(int freq = 250, int amp = 1, int length = 5) : frequency(freq), amplitude(amp), duration(length)
+		Audio(int freq = 250, int amp = 1, int phase = 0, int length = 5) : frequency1(freq), amplitude1(amp), phase1(phase),
+																			frequency2(freq), amplitude2(amp), phase2(phase), duration(length)
 		{
 			chunk.byteRate = chunk.sampleRate *  chunk.numChannels * bps / 8;
 
 			chunk.blockAlign = chunk.numChannels * bps / 8;
 
 			chunk.bitsPerSample = bps;
+		}
+		
+		void setFreq1(int f) {
+			frequency1 = f;
+		}
+		
+		void setFreq2(int f) {
+			frequency2 = f;
+		}
+		
+		void setAmp1(int a) {
+			amplitude1 = a;
+		}
+		
+		void setAmp2(int a) {
+			amplitude2 = a;
+		}
+		
+		void setPhase1(int p) {
+			phase1 = p;
+		}
+		
+		void setPhase2(int p) {
+			phase2 = p;
+		}
+		
+		void setDuration(int d) {
+			duration = d;
 		}
 
 		Audio& generate();
